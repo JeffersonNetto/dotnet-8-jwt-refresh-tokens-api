@@ -1,23 +1,14 @@
-namespace WebApi.Authorization;
-
-using Microsoft.Extensions.Options;
-using WebApi.Helpers;
 using WebApi.Services;
 
-public class JwtMiddleware
-{
-    private readonly RequestDelegate _next;
-    private readonly AppSettings _appSettings;
+namespace WebApi.Authorization;
 
-    public JwtMiddleware(RequestDelegate next, IOptions<AppSettings> appSettings)
-    {
-        _next = next;
-        _appSettings = appSettings.Value;
-    }
+public class JwtMiddleware(RequestDelegate next)
+{
+    private readonly RequestDelegate _next = next;
 
     public async Task Invoke(HttpContext context, IUserService userService, IJwtUtils jwtUtils)
     {
-        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var token = context.Request.Headers.Authorization.FirstOrDefault()?.Split(" ").Last();
         var userId = jwtUtils.ValidateJwtToken(token);
         if (userId != null)
         {

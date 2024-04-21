@@ -1,28 +1,21 @@
-﻿namespace WebApi.Controllers;
-
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using WebApi.Authorization;
 using WebApi.Models.Users;
 using WebApi.Services;
 
+namespace WebApi.Controllers;
+
 [Authorize]
 [ApiController]
 [Route("[controller]")]
-public class UsersController : ControllerBase
+public class UsersController(IUserService userService) : ControllerBase
 {
-    private IUserService _userService;
-
-    public UsersController(IUserService userService)
-    {
-        _userService = userService;
-    }
-
     [AllowAnonymous]
     [HttpPost("authenticate")]
     public IActionResult Authenticate(AuthenticateRequest model)
     {
-        var response = _userService.Authenticate(model, ipAddress());
-        setTokenCookie(response.RefreshToken);
+        var response = userService.Authenticate(model, IpAddress());
+        SetTokenCookie(response.RefreshToken);
         return Ok(response);
     }
 
@@ -31,8 +24,8 @@ public class UsersController : ControllerBase
     public IActionResult RefreshToken()
     {
         var refreshToken = Request.Cookies["refreshToken"];
-        var response = _userService.RefreshToken(refreshToken, ipAddress());
-        setTokenCookie(response.RefreshToken);
+        var response = userService.RefreshToken(refreshToken, IpAddress());
+        SetTokenCookie(response.RefreshToken);
         return Ok(response);
     }
 
@@ -45,34 +38,34 @@ public class UsersController : ControllerBase
         if (string.IsNullOrEmpty(token))
             return BadRequest(new { message = "Token is required" });
 
-        _userService.RevokeToken(token, ipAddress());
+        userService.RevokeToken(token, IpAddress());
         return Ok(new { message = "Token revoked" });
     }
 
     [HttpGet]
     public IActionResult GetAll()
     {
-        var users = _userService.GetAll();
+        var users = userService.GetAll();
         return Ok(users);
     }
 
     [HttpGet("{id}")]
     public IActionResult GetById(int id)
     {
-        var user = _userService.GetById(id);
+        var user = userService.GetById(id);
         return Ok(user);
     }
 
     [HttpGet("{id}/refresh-tokens")]
     public IActionResult GetRefreshTokens(int id)
     {
-        var user = _userService.GetById(id);
+        var user = userService.GetById(id);
         return Ok(user.RefreshTokens);
     }
 
     // helper methods
 
-    private void setTokenCookie(string token)
+    private void SetTokenCookie(string token)
     {
         // append cookie with refresh token to the http response
         var cookieOptions = new CookieOptions
@@ -83,12 +76,11 @@ public class UsersController : ControllerBase
         Response.Cookies.Append("refreshToken", token, cookieOptions);
     }
 
-    private string ipAddress()
+    private string IpAddress()
     {
         // get source ip address for the current request
-        if (Request.Headers.ContainsKey("X-Forwarded-For"))
-            return Request.Headers["X-Forwarded-For"];
-        else
-            return HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
+        return Request.Headers.TryGetValue("X-Forwarded-For", out Microsoft.Extensions.Primitives.StringValues value) ? 
+            (string)value : 
+            HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
     }
 }

@@ -1,5 +1,3 @@
-namespace WebApi.Authorization;
-
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -9,6 +7,8 @@ using System.Text;
 using WebApi.Entities;
 using WebApi.Helpers;
 
+namespace WebApi.Authorization;
+
 public interface IJwtUtils
 {
     public string GenerateJwtToken(User user);
@@ -16,18 +16,12 @@ public interface IJwtUtils
     public RefreshToken GenerateRefreshToken(string ipAddress);
 }
 
-public class JwtUtils : IJwtUtils
+public class JwtUtils(
+    DataContext context,
+    IOptions<AppSettings> appSettings) : IJwtUtils
 {
-    private DataContext _context;
-    private readonly AppSettings _appSettings;
-
-    public JwtUtils(
-        DataContext context,
-        IOptions<AppSettings> appSettings)
-    {
-        _context = context;
-        _appSettings = appSettings.Value;
-    }
+    private DataContext _context = context;
+    private readonly AppSettings _appSettings = appSettings.Value;
 
     public string GenerateJwtToken(User user)
     {

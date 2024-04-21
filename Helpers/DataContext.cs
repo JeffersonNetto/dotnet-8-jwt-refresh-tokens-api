@@ -1,18 +1,11 @@
-namespace WebApi.Helpers;
-
 using Microsoft.EntityFrameworkCore;
 using WebApi.Entities;
 
+namespace WebApi.Helpers;
+
 public class DataContext : DbContext
 {
-    public DbSet<User> Users { get; set; }
-
-    private readonly IConfiguration Configuration;
-
-    public DataContext(IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+    public DbSet<User> Users { get; set; }        
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {

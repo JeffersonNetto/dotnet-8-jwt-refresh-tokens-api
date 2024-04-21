@@ -1,4 +1,6 @@
-﻿using System.Text.Json.Serialization;
+﻿using Serilog;
+using Serilog.Events;
+using System.Text.Json.Serialization;
 using WebApi.Authorization;
 using WebApi.Entities;
 using WebApi.Helpers;
@@ -6,10 +8,16 @@ using WebApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.UseSerilog((ctx, lc) => lc
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console());
+
 // add services to DI container
 {
     var services = builder.Services;
-    var env = builder.Environment;
+    var env = builder.Environment;    
  
     services.AddDbContext<DataContext>();
     services.AddCors();
@@ -22,6 +30,8 @@ var builder = WebApplication.CreateBuilder(args);
     // configure DI for application services
     services.AddScoped<IJwtUtils, JwtUtils>();
     services.AddScoped<IUserService, UserService>();
+
+    services.AddSwaggerGen();
 }
 
 var app = builder.Build();
@@ -57,6 +67,12 @@ using (var scope = app.Services.CreateScope())
     app.UseMiddleware<JwtMiddleware>();
 
     app.MapControllers();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
 }
 
-app.Run("http://localhost:4000");
+app.Run();
